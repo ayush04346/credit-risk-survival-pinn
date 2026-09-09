@@ -1,0 +1,44 @@
+{
+  "arm": "Unconstrained NN",
+  "metrics": {
+    "auc_12m": 0.6878560457631291,
+    "auc_24m": 0.6785910530583071,
+    "auc_36m": 0.6387682694943102,
+    "pct_borrowers_any_PD_inversion": 97.51524607280147,
+    "largest_PD_reversal": 0.40227100253105164,
+    "pct_borrowers_PD12_gt_PD24": 60.590236581083005,
+    "pct_borrowers_PD24_gt_PD36": 97.51524607280147,
+    "c_harrell": 0.6597701292843903,
+    "c_uno": 0.6361976358747121,
+    "ibs_1_60m": 0.18185032848377816
+  },
+  "monotonicity": {
+    "arm": "Unconstrained NN",
+    "n_borrowers": 1000,
+    "n_grid_points": 119,
+    "pct_points_violating": 72.81016949152543,
+    "pct_borrowers_violating": 100.0,
+    "max_violation_dLam_dt": 0.08178631433086458,
+    "max_violation_dLam": 0.04089315716543229,
+    "max_survival_increase": 0.02018868923187256
+  },
+  "notes": {
+    "n_test": 674272,
+    "n_train": 300000,
+    "backends": {
+      "lifelines": true,
+      "scikit-survival": false
+    },
+    "c_index_n": 25000,
+    "ibs_n": 100000
+  },
+  "extra": {
+    "best_epoch": 56,
+    "total_steps": 1980,
+    "stopped_early": false,
+    "epochs_run": 60,
+    "max_epochs": 60,
+    "subsample_n": 300000,
+    "n_train_used": 300000
+  }
+}
