@@ -1,0 +1,49 @@
+{
+  "arm": "Cox PH",
+  "metrics": {
+    "auc_12m": 0.6987211527332783,
+    "auc_24m": 0.6878928792021515,
+    "auc_36m": 0.6837868846968538,
+    "pct_borrowers_any_PD_inversion": 0.0,
+    "largest_PD_reversal": 0.0,
+    "pct_borrowers_PD12_gt_PD24": 0.0,
+    "pct_borrowers_PD24_gt_PD36": 0.0,
+    "c_harrell": 0.6837801965551328,
+    "c_uno": 0.6438096282831907,
+    "ibs_1_60m": 0.14343151280164185
+  },
+  "monotonicity": {
+    "arm": "Cox PH",
+    "n_borrowers": 1000,
+    "n_grid_points": 119,
+    "pct_points_violating": 0.0,
+    "pct_borrowers_violating": 0.0,
+    "max_violation_dLam_dt": 0.0,
+    "max_violation_dLam": 0.0,
+    "max_survival_increase": 0.0
+  },
+  "notes": {
+    "n_test": 674272,
+    "n_train": 300000,
+    "backends": {
+      "lifelines": true,
+      "scikit-survival": false
+    },
+    "c_index_n": 25000,
+    "ibs_n": 100000
+  },
+  "extra": {
+    "penalizer": 0.1,
+    "deviation": "ridge penalizer=0.1; the shared one-hot encoding of home_ownership is exactly collinear and makes the Cox information matrix singular without it",
+    "subsample_n": 300000,
+    "n_train_used": 300000,
+    "ph_violations": [
+      "int_rate",
+      "grade",
+      "emp_length",
+      "term",
+      "emp_length_missing"
+    ],
+    "ph_n_covariates": 14
+  }
+}
