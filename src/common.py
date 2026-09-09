@@ -42,6 +42,14 @@ SEED = 42
 TEST_SIZE = 0.30
 HORIZONS = (12, 24, 36)
 
+#: Training-set subsample used by the arms whose fitting cost is superlinear or
+#: otherwise prohibitive on the full 1.57M training rows (the neural arms and
+#: Cox). The TEST split is never subsampled, so every arm is scored on the same
+#: 674,272 held-out loans and the metrics stay comparable across the whole table.
+#: Each arm records its own ``n_train`` in its results JSON, so where an arm sits
+#: is always visible rather than assumed.
+SUBSAMPLE_N = 300_000
+
 #: Evaluation grid for the integrated Brier score (months).
 IBS_GRID = np.arange(1.0, 61.0, 1.0)
 
@@ -131,6 +139,37 @@ def make_split(seed: int = SEED, df=None, test_size: float = TEST_SIZE):
         df, test_size=test_size, random_state=seed, shuffle=True
     )
     return train_df, test_df
+
+
+def subsample_train(train_df: pd.DataFrame, n: int = SUBSAMPLE_N, seed: int = SEED,
+                    stratify_on: str = "event") -> pd.DataFrame:
+    """
+    Stratified subsample of the TRAINING split only.
+
+    Fitting some arms on all 1.57M training rows does not finish in acceptable
+    wall-clock on this machine. Rather than leave those arms unmeasured, they are
+    fitted on a stratified draw that preserves the event rate exactly, and every
+    arm records the ``n_train`` it actually used.
+
+    The test split is deliberately not touched: all arms are scored on the same
+    674,272 held-out loans, so the comparison across the table stays valid even
+    where the training sizes differ.
+
+    Passing ``n=None`` or an ``n`` at least as large as the frame returns it
+    unchanged, so an arm can opt out by asking for the full set.
+    """
+    if n is None or n >= len(train_df):
+        return train_df
+
+    rng = np.random.default_rng(seed)
+    parts = []
+    groups = train_df.groupby(stratify_on, sort=True)
+    for _, g in groups:
+        take = int(round(n * len(g) / len(train_df)))
+        take = max(1, min(take, len(g)))
+        parts.append(g.iloc[rng.choice(len(g), size=take, replace=False)])
+    out = pd.concat(parts).sample(frac=1.0, random_state=seed)
+    return out
 
 
 # --------------------------------------------------------------------------

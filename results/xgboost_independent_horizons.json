@@ -4,6 +4,10 @@
     "auc_12m": 0.7121178329417489,
     "auc_24m": 0.708461748572049,
     "auc_36m": 0.7117150632817939,
+    "pct_borrowers_any_PD_inversion": 1.6874495752455982,
+    "largest_PD_reversal": 0.15110564231872559,
+    "pct_borrowers_PD12_gt_PD24": 0.10618860044611077,
+    "pct_borrowers_PD24_gt_PD36": 1.6170032271842816,
     "c_harrell": 0.6864735522768542,
     "c_uno": 0.6522501455248995,
     "ibs_1_60m": 0.14781164689719256
@@ -20,6 +24,7 @@
   },
   "notes": {
     "n_test": 674272,
+    "n_train": 1573299,
     "backends": {
       "lifelines": true,
       "scikit-survival": false

@@ -48,9 +48,9 @@ def as_tensors(X, t, e, device="cpu"):
     return X, t, e
 
 
-def train_minibatch(model, step_loss, X, t, e, *, batch_size=8192, max_epochs=40,
-                    lr=1e-3, val_frac=0.1, patience=5, seed=SEED, monitor="data",
-                    device="cpu", verbose=True):
+def train_minibatch(model, step_loss, X, t, e, *, batch_size=8192, max_epochs=60,
+                    lr=1e-3, val_frac=0.1, patience=5, min_delta=1e-4, seed=SEED,
+                    monitor="data", device="cpu", verbose=True):
     """
     Minibatch Adam with a validation split and early stopping.
 
@@ -64,6 +64,16 @@ def train_minibatch(model, step_loss, X, t, e, *, batch_size=8192, max_epochs=40
         is never touched here.
     patience : epochs without validation improvement before stopping. The best
         weights seen are restored before returning.
+    min_delta : how much the monitored validation loss must fall to count as an
+        improvement. This is not cosmetic. With a threshold at floating-point
+        noise, "improved" is true almost every epoch and training always runs to
+        ``max_epochs``, so the epoch cap silently becomes the stopping rule and
+        every arm is reported at whatever point the cap happened to fall. A real
+        threshold lets early stopping fire when progress stops mattering, which
+        is what makes two arms' metrics comparable.
+    max_epochs : a safety ceiling, not the intended stopping rule. Check
+        ``history['stopped_early']``: if it is False the arm hit the ceiling and
+        is undertrained.
 
     Returns
     -------
@@ -146,7 +156,7 @@ def train_minibatch(model, step_loss, X, t, e, *, batch_size=8192, max_epochs=40
             history["train_" + nm].append(train_parts.get(nm, float("nan")))
             history["val_" + nm].append(val_parts.get(nm, float("nan")))
 
-        improved = watch < best - 1e-6
+        improved = watch < best - min_delta
         if improved:
             best, best_epoch, bad = watch, epoch, 0
             best_state = copy.deepcopy(model.state_dict())
@@ -170,9 +180,18 @@ def train_minibatch(model, step_loss, X, t, e, *, batch_size=8192, max_epochs=40
     history["best_monitor"] = best
     history["monitor"] = monitor
     history["total_steps"] = total_steps
+    history["stopped_early"] = bool(bad >= patience)
+    history["max_epochs"] = max_epochs
+    history["min_delta"] = min_delta
     if verbose:
         print(f"restored weights from epoch {best_epoch} | {total_steps} gradient steps "
               f"in {time.time() - t0:.0f}s")
+        if history["stopped_early"]:
+            print(f"early stopping fired (min_delta={min_delta:g}); "
+                  f"the {max_epochs}-epoch cap did not bind")
+        else:
+            print(f"WARNING: hit the {max_epochs}-epoch cap without early stopping. "
+                  f"This arm is undertrained and its metrics understate it.")
     return history
 
 

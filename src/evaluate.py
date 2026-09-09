@@ -175,6 +175,32 @@ def time_dependent_auc(S_at_h: np.ndarray, y: np.ndarray) -> float:
     return float(roc_auc_score(y, 1.0 - S_at_h))
 
 
+def pd_inversion_stats(S_at_horizons: np.ndarray, horizons=HORIZONS) -> dict:
+    """
+    Count borrowers whose fitted PD term structure is out of order.
+
+    ``S_at_horizons`` is ``(n, len(horizons))`` with horizons ascending. The
+    predicted probability of default by H is ``1 - S(H)``, and it must be
+    non-decreasing in H. Any borrower for whom it is not has a term structure
+    that no real loan book can produce.
+
+    Reported as a fraction of held-out borrowers, plus the largest single
+    backwards step in probability.
+    """
+    pdh = 1.0 - np.asarray(S_at_horizons, float)
+    d = np.diff(pdh, axis=1)
+    any_inv = (d < 0).any(axis=1)
+    out = {
+        "pct_borrowers_any_PD_inversion": 100.0 * float(any_inv.mean()),
+        "largest_PD_reversal": float(max(0.0, -d.min())) if d.size else 0.0,
+    }
+    hs = list(horizons)
+    for k in range(len(hs) - 1):
+        key = "pct_borrowers_PD%d_gt_PD%d" % (hs[k], hs[k + 1])
+        out[key] = 100.0 * float((d[:, k] < 0).mean())
+    return out
+
+
 def brier_curve(S: np.ndarray, times: np.ndarray, time, event,
                 cens_km: CensoringKM):
     """
@@ -297,13 +323,21 @@ def evaluate_arm(predict_survival, X_test, test_df, train_df, name="model",
                        train_df["event"].to_numpy(int))
 
     metrics = {}
-    notes = {"n_test": int(len(test_df)), "backends": available_backends()}
+    notes = {"n_test": int(len(test_df)), "n_train": int(len(train_df)),
+             "backends": available_backends()}
 
     # ---- time-dependent AUC on the FULL test set -------------------------
     S_h = np.asarray(predict_survival(X_test, np.asarray(horizons, float)))
     for k, H in enumerate(horizons):
         y = ((t_te <= H) & (e_te == 1)).astype(int)
         metrics["auc_%dm" % H] = time_dependent_auc(S_h[:, k], y)
+
+    # ---- PD term-structure inversions, on the FULL test set --------------
+    # PD(H) = 1 - S(H) must be non-decreasing in H, because defaulting within 12
+    # months is a subset of defaulting within 24. Counted here for every arm from
+    # the same predicted survival array, so the column means the same thing in
+    # every row of the comparison table.
+    metrics.update(pd_inversion_stats(S_h, horizons))
 
     # ---- C-indices on a fixed subsample ----------------------------------
     n = len(test_df)
