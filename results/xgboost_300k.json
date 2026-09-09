@@ -1,0 +1,40 @@
+{
+  "arm": "XGBoost (300k)",
+  "metrics": {
+    "auc_12m": 0.7107809460618243,
+    "auc_24m": 0.708191361102727,
+    "auc_36m": 0.7113703413923198,
+    "pct_borrowers_any_PD_inversion": 2.2192824260832427,
+    "largest_PD_reversal": 0.15549331903457642,
+    "pct_borrowers_PD12_gt_PD24": 0.1447487067533577,
+    "pct_borrowers_PD24_gt_PD36": 2.1105725879170425,
+    "c_harrell": 0.6866852975772952,
+    "c_uno": 0.650677646131295,
+    "ibs_1_60m": 0.14826872275041325
+  },
+  "monotonicity": {
+    "arm": "XGBoost (300k)",
+    "n_borrowers": 1000,
+    "n_grid_points": 119,
+    "pct_points_violating": 0.26440677966101694,
+    "pct_borrowers_violating": 1.2,
+    "max_violation_dLam_dt": 0.0020445583964934233,
+    "max_violation_dLam": 0.0010222791982467117,
+    "max_survival_increase": 0.0007486417889595032
+  },
+  "notes": {
+    "n_test": 674272,
+    "n_train": 300000,
+    "backends": {
+      "lifelines": true,
+      "scikit-survival": false
+    },
+    "c_index_n": 25000,
+    "ibs_n": 100000
+  },
+  "extra": {
+    "subsample_n": 300000,
+    "n_train_used": 300000,
+    "note": "matched-size twin of the full-data arm, fitted on the same 300,000-row stratified draw the survival arms use, so the comparison against them is not confounded by training size"
+  }
+}

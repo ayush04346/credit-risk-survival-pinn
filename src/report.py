@@ -20,9 +20,17 @@ from .common import RESULTS_DIR
 
 #: Canonical arm order for the comparison table: classical first, then the
 #: survival models in increasing order of structural constraint.
+#:
+#: Each classical model appears twice. The full-data row is the best that model
+#: does on this problem; the "(300k)" row is fitted on the same stratified draw
+#: the survival arms use. Without the second row, any classical lead over a
+#: survival arm mixes a real difference in discrimination with a five-fold
+#: advantage in training rows, and the table cannot say which it is.
 ARM_ORDER = [
     "Logistic (independent horizons)",
+    "Logistic (300k)",
     "XGBoost (independent horizons)",
+    "XGBoost (300k)",
     "Cox PH",
     "Unconstrained NN",
     "Soft-penalty NN",
