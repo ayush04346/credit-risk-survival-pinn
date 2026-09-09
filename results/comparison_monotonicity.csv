@@ -1,0 +1,5 @@
+arm,n_borrowers,n_grid_points,pct_points_violating,pct_borrowers_violating,max_violation_dLam_dt,max_violation_dLam,max_survival_increase
+Logistic (independent horizons),1000,119,0.0,0.0,0.0,0.0,0.0
+Soft-penalty NN,1000,119,0.0,0.0,0.0,0.0,0.0
+XGBoost (independent horizons),1000,119,0.183,0.9,0.001098,0.0005489,0.0004269
+Unconstrained NN,1000,119,72.81,100.0,0.08179,0.04089,0.02019
