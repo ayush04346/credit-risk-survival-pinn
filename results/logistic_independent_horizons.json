@@ -1,0 +1,31 @@
+{
+  "arm": "Logistic (independent horizons)",
+  "metrics": {
+    "auc_12m": 0.701238387209364,
+    "auc_24m": 0.6910986641833848,
+    "auc_36m": 0.6875884363440319,
+    "c_harrell": 0.6803643502497185,
+    "c_uno": 0.6419295820645469,
+    "ibs_1_60m": 0.15011423493929948
+  },
+  "monotonicity": {
+    "arm": "Logistic (independent horizons)",
+    "n_borrowers": 1000,
+    "n_grid_points": 119,
+    "pct_points_violating": 0.0,
+    "pct_borrowers_violating": 0.0,
+    "max_violation_dLam_dt": 0.0,
+    "max_violation_dLam": 0.0,
+    "max_survival_increase": 0.0
+  },
+  "notes": {
+    "n_test": 674272,
+    "backends": {
+      "lifelines": true,
+      "scikit-survival": false
+    },
+    "c_index_n": 25000,
+    "ibs_n": 100000
+  },
+  "extra": {}
+}

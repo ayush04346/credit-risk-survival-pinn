@@ -1,0 +1,31 @@
+{
+  "arm": "XGBoost (independent horizons)",
+  "metrics": {
+    "auc_12m": 0.7121178329417489,
+    "auc_24m": 0.708461748572049,
+    "auc_36m": 0.7117150632817939,
+    "c_harrell": 0.6864735522768542,
+    "c_uno": 0.6522501455248995,
+    "ibs_1_60m": 0.14781164689719256
+  },
+  "monotonicity": {
+    "arm": "XGBoost (independent horizons)",
+    "n_borrowers": 1000,
+    "n_grid_points": 119,
+    "pct_points_violating": 0.18305084745762712,
+    "pct_borrowers_violating": 0.8999999999999999,
+    "max_violation_dLam_dt": 0.0010977162927314765,
+    "max_violation_dLam": 0.0005488581463657383,
+    "max_survival_increase": 0.0004268959164619446
+  },
+  "notes": {
+    "n_test": 674272,
+    "backends": {
+      "lifelines": true,
+      "scikit-survival": false
+    },
+    "c_index_n": 25000,
+    "ibs_n": 100000
+  },
+  "extra": {}
+}
