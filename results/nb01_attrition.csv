@@ -1,0 +1,5 @@
+step,rows,dropped,pct_dropped,note,retained_pct
+00 loaded from raw Kaggle file,2260701,0,0.0,151 cols in file,100.0
+"01 dropna(issue_d, last_pymnt_d)",2258241,2460,0.109,loans with no recorded payment date,99.891
+02 filter time > 0,2249276,8965,0.397,"8,965 non-positive durations",99.495
+03 dropna(modelling columns),2247571,1705,0.076,emp_length deliberately exempt,99.419
