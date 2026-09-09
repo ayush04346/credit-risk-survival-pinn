@@ -1,0 +1,48 @@
+{
+  "arm": "Monotone-architecture NN",
+  "metrics": {
+    "auc_12m": 0.7037917861801373,
+    "auc_24m": 0.6919960192064568,
+    "auc_36m": 0.6871162050109232,
+    "pct_borrowers_any_PD_inversion": 0.0,
+    "largest_PD_reversal": 0.0,
+    "pct_borrowers_PD12_gt_PD24": 0.0,
+    "pct_borrowers_PD24_gt_PD36": 0.0,
+    "c_harrell": 0.6882705406465903,
+    "c_uno": 0.6481595229328069,
+    "ibs_1_60m": 0.1428820539375956
+  },
+  "monotonicity": {
+    "arm": "Monotone-architecture NN",
+    "n_borrowers": 1000,
+    "n_grid_points": 119,
+    "pct_points_violating": 0.0,
+    "pct_borrowers_violating": 0.0,
+    "max_violation_dLam_dt": 0.0,
+    "max_violation_dLam": 0.0,
+    "max_survival_increase": 0.0
+  },
+  "notes": {
+    "n_test": 674272,
+    "n_train": 300000,
+    "backends": {
+      "lifelines": true,
+      "scikit-survival": false
+    },
+    "c_index_n": 25000,
+    "ibs_n": 100000
+  },
+  "extra": {
+    "penalty": "none - monotonicity is structural",
+    "diagnostic_residual": 0.0,
+    "n_quad_nodes": 32,
+    "fine_step_months": 0.25,
+    "best_epoch": 30,
+    "total_steps": 2310,
+    "stopped_early": true,
+    "epochs_run": 35,
+    "max_epochs": 60,
+    "subsample_n": 300000,
+    "n_train_used": 300000
+  }
+}
