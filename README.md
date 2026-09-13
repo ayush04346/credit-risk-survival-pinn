@@ -2,9 +2,9 @@
 
 **What does a structurally valid PD term structure cost?**
 
-Eight models of default risk on 2.25M Lending Club loans, evaluated on the same
-674,272 held-out borrowers, ranked on two axes at once: how well they
-discriminate, and how often they emit a term structure that cannot happen.
+Eight models of default risk on 2.25M Lending Club loans, evaluated on one
+common held-out set of 674,272 borrowers, ranked on two axes at once: how well
+they discriminate, and how often they emit a term structure that cannot happen.
 
 The short answer, in one line: **a structurally monotone neural hazard model
 eliminates impossible term structures entirely and costs 0.0070 to 0.0243 AUC
@@ -25,7 +25,8 @@ The standard industry approach is to fit an independent classifier per horizon:
 one model for 12 months, another for 24, another for 36. Nothing ties them
 together, so nothing stops them crossing.
 
-On 674,272 held-out loans, they cross:
+On 674,272 held-out loans, they cross. Every figure below, for all eight arms,
+is in [`results/pd_inversions_all_arms.csv`](results/pd_inversions_all_arms.csv):
 
 | Approach | Borrowers with an impossible term structure | Largest reversal |
 |---|---|---|
@@ -49,37 +50,56 @@ unlikely.
 
 All arms use the same 70/30 split at seed 42, the same 14-column design matrix
 from eight source features, and the same evaluation harness. All are scored on
-the identical 674,272-row test set.
+the identical held-out test set.
+
+**Not every column rests on the same number of borrowers.** AUC at 12, 24 and 36
+months and the monotonicity audit use all **674,272** held-out loans. Both
+C-indices are computed on a **25,000**-borrower subsample and the integrated
+Brier score on **100,000**, because both are quadratic in comparable pairs. Those
+sample sizes are carried in each arm's `notes` block and are now columns
+(`c_index_n`, `ibs_n`) in the master table, so the table states its own
+resolution rather than implying 674,272 everywhere.
 
 From [`results/master_comparison.csv`](results/master_comparison.csv):
 
-| Arm | AUC 12m | AUC 24m | AUC 36m | C-Harrell | C-Uno | IBS 1-60m | PD inversions | n_train |
-|---|---|---|---|---|---|---|---|---|
-| Logistic (independent horizons) | 0.7012 | 0.6911 | 0.6876 | 0.6804 | 0.6419 | 0.1501 | 0.046% | 1,573,299 |
-| Logistic (300k) | 0.7010 | 0.6909 | 0.6875 | 0.6802 | 0.6418 | 0.1507 | 0.074% | 300,000 |
-| XGBoost (independent horizons) | 0.7121 | 0.7085 | **0.7117** | 0.6865 | **0.6523** | 0.1478 | 1.687% | 1,573,299 |
-| XGBoost (300k) | **0.7108** | **0.7082** | **0.7114** | 0.6867 | 0.6507 | 0.1483 | 2.219% | 300,000 |
-| Cox PH | 0.6987 | 0.6879 | 0.6838 | 0.6838 | 0.6438 | 0.1434 | **0.000%** | 300,000 |
-| Unconstrained NN | 0.6879 | 0.6786 | 0.6388 | 0.6598 | 0.6362 | 0.1819 | 97.515% | 300,000 |
-| Soft-penalty NN | 0.7030 | 0.6905 | 0.6850 | 0.6881 | 0.6491 | **0.1397** | 0.002% | 300,000 |
-| Monotone-architecture NN | 0.7038 | 0.6920 | 0.6871 | **0.6883** | 0.6482 | 0.1429 | **0.000%** | 300,000 |
+| Arm | AUC 12m | AUC 24m | AUC 36m | C-Harrell | C-Uno | IBS 1-60m | PD inversions | Largest reversal | n_train |
+|---|---|---|---|---|---|---|---|---|---|
+| Logistic (independent horizons) | 0.7012 | 0.6911 | 0.6876 | 0.6804 | 0.6419 | 0.1501 | 0.046% | 0.0220 | 1,573,299 |
+| Logistic (300k) | 0.7010 | 0.6909 | 0.6875 | 0.6802 | 0.6418 | 0.1507 | 0.074% | 0.0321 | 300,000 |
+| XGBoost (independent horizons) | 0.7121 | 0.7085 | **0.7117** | 0.6865 | **0.6523** | 0.1478 | 1.687% | 0.1511 | 1,573,299 |
+| XGBoost (300k) | **0.7108** | **0.7082** | **0.7114** | 0.6867 | 0.6507 | 0.1483 | 2.219% | 0.1555 | 300,000 |
+| Cox PH | 0.6987 | 0.6879 | 0.6838 | 0.6838 | 0.6438 | 0.1434 | **0.000%** | **0** | 300,000 |
+| Unconstrained NN | 0.6879 | 0.6786 | 0.6388 | 0.6598 | 0.6362 | 0.1819 | 97.515% | 0.4023 | 300,000 |
+| Soft-penalty NN | 0.7030 | 0.6905 | 0.6850 | 0.6881 | 0.6491 | **0.1397** | 0.002% | 8.05e-06 | 300,000 |
+| Monotone-architecture NN | 0.7038 | 0.6920 | 0.6871 | 0.6883 | 0.6482 | 0.1429 | **0.000%** | **0** | 300,000 |
 
-### The two C-indices disagree, and both are reported
+Bold marks a column best. The C-index columns carry no bold: as set out
+immediately below, the arms at the top of those two columns are tied.
 
-Harrell's C puts the monotone network first at 0.6883 against XGBoost's 0.6867.
-Uno's C puts XGBoost first at 0.6507 against 0.6482. The ordering flips depending
-on which you read, so both are in the table.
+### On the C-indices: the monotone network and XGBoost are tied
 
-The disagreement has a cause worth understanding rather than averaging away.
-Harrell's C scores the entire survival curve, and the survival arms produce one
-continuously in time, while XGBoost produces estimates at exactly three horizons
-that the evaluation harness holds flat between and beyond them. That flatness is
-a property of the adapter, not of gradient boosting, and it costs XGBoost on a
+Harrell's C puts the monotone network nominally ahead, 0.6883 against XGBoost's
+0.6867. Uno's C puts XGBoost nominally ahead, 0.6507 against 0.6482. The ordering
+flips depending on which you read, so both are in the table.
+
+**Neither ordering is real.** The Harrell gap is 0.0016 and the Uno gap is 0.0025,
+and both are smaller than the sampling error of a C-index estimated on 25,000
+borrowers. No resampled interval was computed to separate them, and none would
+need to be: gaps of a couple of thousandths are below the resolution a sample
+that size supports. The honest statement is that the two arms are tied on
+concordance, not that either leads.
+
+The *direction* of the flip still has a cause worth naming. Harrell's C scores
+the entire survival curve, and the survival arms produce one continuously in
+time, while XGBoost produces estimates at exactly three horizons that the
+evaluation harness holds flat between and beyond them. That flatness is a
+property of the adapter, not of gradient boosting, and it costs XGBoost on a
 whole-curve metric. Uno's C reweights by the inverse censoring distribution,
-which shifts weight toward the horizons where XGBoost was actually fitted.
+which shifts weight back toward the horizons where XGBoost was actually fitted.
 
-Neither is wrong. They measure different things, and a study that reported only
-the favourable one would be hiding the shape of its own result.
+**The load-bearing comparison is the AUC gap in Section 3(b), not either
+C-index.** Those are computed on all 674,272 test borrowers, and the gaps there
+are an order of magnitude larger than these.
 
 ---
 
@@ -87,18 +107,25 @@ the favourable one would be hiding the shape of its own result.
 
 ### (a) Against an unconstrained network, monotonicity is free
 
-Tightening the constraint improves every metric simultaneously. There is no
-trade-off on this axis at all:
+Tightening the constraint costs nothing on this axis. Going unconstrained to
+soft penalty improves every metric at once; going on to the structural guarantee
+holds that gain and removes the last violations:
 
 | | Unconstrained | Soft penalty (α = 0.1) | Monotone architecture |
 |---|---|---|---|
 | AUC 12m | 0.6879 | 0.7030 | **0.7038** |
 | AUC 24m | 0.6786 | 0.6905 | **0.6920** |
 | AUC 36m | 0.6388 | 0.6850 | **0.6871** |
-| C-Harrell | 0.6598 | 0.6881 | **0.6883** |
-| C-Uno | 0.6362 | **0.6491** | 0.6482 |
+| C-Harrell | 0.6598 | 0.6881 | 0.6883 |
+| C-Uno | 0.6362 | 0.6491 | 0.6482 |
 | IBS 1-60m | 0.1819 | **0.1397** | 0.1429 |
 | PD inversions | 97.515% | 0.002% | **0.000%** |
+
+The large step is unconstrained to soft penalty, and it is unambiguous: every
+metric improves, several of them substantially. The second step, soft penalty to
+monotone architecture, improves the three AUCs and moves both C-indices by less
+than 0.0010 in opposite directions, which is a tie. What that second step
+actually delivers is the last twelve inverted borrowers, not more discrimination.
 
 Constraining the model did not cost discrimination; it bought some. An
 unconstrained hazard network spends capacity fitting shapes that are not
@@ -140,7 +167,8 @@ penalty leaves behind buy it slightly better-calibrated curves everywhere else.
 Both constrained networks report **0.0% violations** on the 1,000-borrower
 monotonicity grid. On that measurement they are indistinguishable.
 
-On the full 674,272-row test set they are not:
+On the full 674,272-row test set they are not, from
+[`results/pd_inversions_all_arms.csv`](results/pd_inversions_all_arms.csv):
 
 | Arm | Grid audit (1,000 borrowers) | Full test set | Largest reversal |
 |---|---|---|---|
@@ -317,7 +345,8 @@ src/common.py        split, features, subsample - single source of truth
 src/evaluate.py      C-indices, time-dependent AUC, IBS, calibration
 src/monotonicity.py  the violation audit every arm runs identically
 src/torch_arms.py    shared training loop for the three neural arms
-src/report.py        builds master_comparison.csv from the per-arm JSONs
+src/report.py        builds master_comparison.csv and
+                     pd_inversions_all_arms.csv from the per-arm JSONs
 Notebooks/01..06     data prep, then one notebook per arm family
 results/             every number in this README, committed
 ```
@@ -370,6 +399,16 @@ not perfectly matched on optimisation budget.
 `revol_util`, no `purpose`, no `sub_grade`. All are present in the raw Kaggle file
 and absent from the cleaned intermediate this study reads, so adding them means
 re-running notebook 01 with a wider column set.
+
+**The C-indices and IBS are computed on subsamples, not the full test set.**
+Both C-indices use 25,000 borrowers and the integrated Brier score uses 100,000,
+against 674,272 for every AUC and for the monotonicity audit. Both metrics are
+quadratic in comparable pairs, which is why. The practical consequence is that
+concordance gaps of a few thousandths, such as the 0.0016 between the monotone
+network and XGBoost on Harrell's C, are below the resolution of the sample and
+should be read as ties. The sizes are columns `c_index_n` and `ibs_n` in the
+master table. Scoring the C-indices on the full set would settle those ties and
+costs a few hours of compute.
 
 **Uno's C is computed by the local harness, not scikit-survival.** `lifelines` is
 available in this environment and `scikit-survival` is not, recorded in each arm's

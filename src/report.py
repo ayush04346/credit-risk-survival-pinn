@@ -42,8 +42,16 @@ MASTER_COLUMNS = [
     "auc_12m", "auc_24m", "auc_36m",
     "c_harrell", "c_uno", "ibs_1_60m",
     "pct_points_violating", "pct_borrowers_violating", "max_survival_increase",
-    "pct_borrowers_any_PD_inversion",
-    "n_train", "n_test",
+    "pct_borrowers_any_PD_inversion", "largest_PD_reversal",
+    "n_train", "n_test", "c_index_n", "ibs_n",
+]
+
+#: Columns of the per-arm PD term-structure inversion table.
+PD_INVERSION_COLUMNS = [
+    "arm",
+    "pct_borrowers_any_PD_inversion", "largest_PD_reversal",
+    "pct_borrowers_PD12_gt_PD24", "pct_borrowers_PD24_gt_PD36",
+    "n_test",
 ]
 
 
@@ -85,8 +93,16 @@ def build_master_table(results_dir=None, write=True, order=ARM_ORDER) -> pd.Data
             "pct_borrowers_violating": mono.get("pct_borrowers_violating"),
             "max_survival_increase": mono.get("max_survival_increase"),
             "pct_borrowers_any_PD_inversion": m.get("pct_borrowers_any_PD_inversion"),
+            "largest_PD_reversal": m.get("largest_PD_reversal"),
             "n_train": notes.get("n_train"),
             "n_test": notes.get("n_test"),
+            # AUC and the monotonicity audit use the full test set; the
+            # C-indices and IBS are computed on subsamples of it because both
+            # are O(n^2) in comparable pairs. Carried here so the table states
+            # its own resolution instead of implying every column rests on
+            # 674,272 borrowers.
+            "c_index_n": notes.get("c_index_n"),
+            "ibs_n": notes.get("ibs_n"),
         })
 
     df = pd.DataFrame(rows, columns=MASTER_COLUMNS)
@@ -99,6 +115,45 @@ def build_master_table(results_dir=None, write=True, order=ARM_ORDER) -> pd.Data
     if write:
         RESULTS_DIR.mkdir(exist_ok=True)
         df.to_csv(RESULTS_DIR / "master_comparison.csv", index=False)
+    return df
+
+
+def build_pd_inversion_table(results_dir=None, write=True, order=ARM_ORDER) -> pd.DataFrame:
+    """
+    Per-arm PD term-structure inversion counts, for every arm in the study.
+
+    A PD term structure is inverted when the fitted probability of default by a
+    later horizon is lower than by an earlier one, which cannot happen: default
+    by month 24 is a subset of default by month 36. Each figure is computed by
+    :func:`src.evaluate.pd_inversion_stats` inside ``evaluate_arm``, on the full
+    test set, from the same predicted survival array the AUCs come from.
+
+    This exists because the reversal magnitudes quoted in the README were
+    otherwise only reachable by opening individual JSON files. Every number the
+    write-up cites should live in a table somebody can read.
+    """
+    payloads = read_arm_jsons(results_dir)
+    rows = []
+    for p in payloads:
+        m = p.get("metrics", {})
+        rows.append({
+            "arm": p["arm"],
+            "pct_borrowers_any_PD_inversion": m.get("pct_borrowers_any_PD_inversion"),
+            "largest_PD_reversal": m.get("largest_PD_reversal"),
+            "pct_borrowers_PD12_gt_PD24": m.get("pct_borrowers_PD12_gt_PD24"),
+            "pct_borrowers_PD24_gt_PD36": m.get("pct_borrowers_PD24_gt_PD36"),
+            "n_test": p.get("notes", {}).get("n_test"),
+        })
+
+    df = pd.DataFrame(rows, columns=PD_INVERSION_COLUMNS)
+    if order:
+        found = {a: i for i, a in enumerate(order)}
+        df["_o"] = df["arm"].map(found).fillna(len(order) + 1)
+        df = df.sort_values(["_o", "arm"]).drop(columns="_o").reset_index(drop=True)
+
+    if write:
+        RESULTS_DIR.mkdir(exist_ok=True)
+        df.to_csv(RESULTS_DIR / "pd_inversions_all_arms.csv", index=False)
     return df
 
 
@@ -122,7 +177,10 @@ def format_master(df: pd.DataFrame) -> pd.DataFrame:
             lambda v: 0.0 if v in (None, 0) or (isinstance(v, float) and v == 0.0)
             else float("%.2e" % v)
         )
-    for c in ["n_train", "n_test"]:
+    if "largest_PD_reversal" in out:
+        out["largest_PD_reversal"] = out["largest_PD_reversal"].map(
+            lambda v: 0.0 if not v else float("%.3g" % v))
+    for c in ["n_train", "n_test", "c_index_n", "ibs_n"]:
         if c in out:
             out[c] = out[c].map(lambda v: "" if pd.isna(v) else f"{int(v):,}")
     return out
